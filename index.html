@@ -1,53 +1,266 @@
-// 1. 找到這一行並替換
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvfhmjSroMeuHxcZpvZ9RG-DYVgQKZBZ6j0WWA1Gqgmq3Jt7VPuSqTrzm_BoWjmVmHsw/exec";
-
-// 2. 確保你的 lookup 函式裡的 fetch 寫法如下（這能對接你的 GAS）：
-async function lookup() {
-    let name = document.getElementById('username').value.trim().replace('@', '');
-    const status = document.getElementById('status');
-    const resArea = document.getElementById('result-area');
-
-    if(!name) return;
-
-    status.innerText = "⏳ 正在轉換中...";
-    resArea.style.display = 'none';
-
-    try {
-        // 發送 POST 請求到你的 GAS
-        const response = await fetch(SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({ username: name })
-        });
-        
-        const data = await response.json();
-
-        if (data && data.data && data.data.length > 0) {
-            const user = data.data[0];
-            document.getElementById('id-value').innerText = user.id;
-            document.getElementById('display-name').innerText = user.displayName; // 如果你有這個欄位
-            resArea.style.display = 'block';
-            status.innerText = "✅ 查詢成功！";
-            status.style.color = "#28a745";
-        } else {
-            status.innerText = "❌ 找不到玩家，請檢查拼字。";
-            status.style.color = "#d9534f";
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>北捷模擬器轉換器 v1.52</title>
+    <style>
+        :root {
+            --primary: #00d2ff;
+            --secondary: #3a7bd5;
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
         }
-    } catch (e) {
-        console.error(e);
-        status.innerText = "⚠️ 連線至伺服器失敗，請稍後再試。";
-        status.style.color = "#d9534f";
-    }
-}
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* 科技感背景裝飾 */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background-image: linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px), 
+                              linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            transform: rotate(15deg);
+            z-index: -1;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2.5rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            width: 90%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+        }
+
+        .version-badge {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            font-size: 0.7rem;
+            background: var(--primary);
+            color: #0f172a;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+        }
+
+        h2 {
+            margin-bottom: 0.5rem;
+            letter-spacing: 2px;
+            background: linear-gradient(to right, #00d2ff, #91eaff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hint {
+            font-size: 0.85rem;
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 16px;
+            box-sizing: border-box;
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 210, 255, 0.4);
+        }
+
+        button:active { transform: translateY(0); }
+
+        #result-area {
+            margin-top: 25px;
+            display: none;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            border-left: 4px solid var(--primary);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .id-display {
+            font-size: 32px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: var(--primary);
+            margin: 10px 0;
+            display: block;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        .status-msg {
+            font-size: 13px;
+            margin-top: 15px;
+            min-height: 20px;
+            color: #94a3b8;
+        }
+
+        .copy-btn {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: var(--primary);
+            color: #0f172a;
+        }
+
+        footer {
+            margin-top: 30px;
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="version-badge">v1.52</div>
+    <h2>北捷 ID 轉換器</h2>
+    <div class="hint">請輸入系統名稱（例如：@roblox）</div>
+    
+    <div class="input-group">
+        <input type="text" id="username" placeholder="搜尋玩家名稱..." spellcheck="false">
+    </div>
+    
+    <button onclick="lookup()" id="search-btn">啟動轉換</button>
+    
+    <div id="result-area">
+        <div id="user-display" style="font-size: 14px; color: #94a3b8; margin-bottom: 5px;"></div>
+        <span id="id-value" class="id-display">----</span>
+        <button class="copy-btn" onclick="copyId()" id="copy-btn">複製 ID 序列</button>
+    </div>
+    
+    <div id="status" class="status-msg"></div>
+
+    <footer>
+        System Powered by <span style="color: #cbd5e1;">元界創想 is Gemini</span>
+    </footer>
+</div>
+
+<script>
+    // ⚠️ 請填入你剛剛測試成功的 GAS 網址
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvfhmjSroMeuHxcZpvZ9RG-DYVgQKZBZ6j0WWA1Gqgmq3Jt7VPuSqTrzm_BoWjmVmHsw/exec";
+
+    async function lookup() {
+        const input = document.getElementById('username');
+        let username = input.value.trim().replace('@', '');
+        const btn = document.getElementById('search-btn');
+        const status = document.getElementById('status');
+        const resultArea = document.getElementById('result-area');
+
+        if (!username) {
+            status.innerText = "❌ 系統錯誤：請輸入有效名稱";
+            status.style.color = "#fb7185";
+            return;
+        }
+
+        // UI 鎖定狀態
+        btn.disabled = true;
+        btn.innerText = "正在同步數據...";
+        status.innerText = "🛰️ 正在經由 Google 安全鏈接通訊...";
+        status.style.color = "#94a3b8";
+        resultArea.style.display = 'none';
+
+        try {
+            const response = await fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ username: username })
+            });
+
+            const data = await response.json();
+
+            if (data && data.data && data.data.length > 0) {
+                const user = data.data[0];
+                document.getElementById('id-value').innerText = user.id;
+                document.getElementById('user-display').innerText = `找到數據：${user.displayName} (@${user.name})`;
+                resultArea.style.display = 'block';
+                status.innerText = "✅ 數據同步完成";
+                status.style.color = "#4ade80";
+            } else {
+                status.innerText = "❌ 警告：找不到該玩家數據";
+                status.style.color = "#fb7185";
+            }
+        } catch (err) {
+            status.innerText = "⚠️ 攔截：遠端伺服器通訊失敗";
+            status.style.color = "#fb7185";
+        } finally {
+            btn.disabled = false;
+            btn.innerText = "啟動轉換";
+        }
     }
 
     async function copyId() {
         const idText = document.getElementById('id-value').innerText;
-        const btn = document.querySelector('.copy-btn');
+        const btn = document.getElementById('copy-btn');
         
         try {
             await navigator.clipboard.writeText(idText);
-            btn.innerText = "✅ 已複製！";
-            setTimeout(() => btn.innerText = "點擊複製 ID", 2000);
+            const originalText = btn.innerText;
+            btn.innerText = "序列已寫入剪貼簿";
+            setTimeout(() => btn.innerText = originalText, 2000);
         } catch (err) {
             // 備用方案
             const temp = document.createElement("input");
@@ -56,8 +269,8 @@ async function lookup() {
             temp.select();
             document.execCommand("copy");
             document.body.removeChild(temp);
-            btn.innerText = "✅ 已複製！";
-            setTimeout(() => btn.innerText = "點擊複製 ID", 2000);
+            btn.innerText = "序列已寫入剪貼簿";
+            setTimeout(() => btn.innerText = "複製 ID 序列", 2000);
         }
     }
 </script>
