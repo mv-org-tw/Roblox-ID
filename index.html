@@ -5,139 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roblox (User) to (ID) 轉換器 v1.62</title>
     <style>
-        :root {
-            --primary: #00d2ff;
-            --secondary: #3a7bd5;
-            --bg: #0b0f1a;
-            --card-bg: rgba(20, 28, 45, 0.9);
-            --accent: #4ade80;
-        }
-
+        :root { --primary: #00d2ff; --secondary: #3a7bd5; --bg: #0b0f1a; --card-bg: rgba(20, 28, 45, 0.9); --accent: #4ade80; }
         * { box-sizing: border-box; }
-
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Segoe UI', 'PingFang TC', sans-serif;
-            background: radial-gradient(circle at center, #16213e 0%, #0b0f1a 100%);
-            color: white;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh;
-        }
-
-        /* 科技感動態背景 */
-        .grid-bg {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px), 
-                              linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px; z-index: -1;
-        }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2.5rem 2rem;
-            border-radius: 24px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
-            width: 95%; /* 自動適應手機 */
-            max-width: 440px;
-            text-align: center; position: relative;
-        }
-
-        .version-badge {
-            position: absolute; top: 15px; right: 20px;
-            font-size: 0.7rem; background: var(--primary);
-            color: #0f172a; padding: 2px 8px; border-radius: 10px; font-weight: bold;
-        }
-
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; background: radial-gradient(circle at center, #16213e 0%, #0b0f1a 100%); color: white; display: flex; justify-content: center; align-items: center; min-height: 100vh; overflow: hidden; }
+        .grid-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-image: linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px); background-size: 50px 50px; z-index: -1; }
+        .card { background: var(--card-bg); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); padding: 2.5rem 2rem; border-radius: 24px; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8); width: 95%; max-width: 440px; text-align: center; position: relative; }
+        .version-badge { position: absolute; top: 15px; right: 20px; font-size: 0.7rem; background: var(--primary); color: #0f172a; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         h2 { margin: 10px 0 5px 0; font-size: 1.5rem; letter-spacing: 1px; }
         .sub-title { font-size: 0.8rem; color: var(--primary); margin-bottom: 20px; font-weight: bold; }
-
-        input {
-            width: 100%; padding: 15px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px; color: white;
-            font-size: 16px; margin-bottom: 15px; text-align: center;
-        }
-
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 15px rgba(0, 210, 255, 0.2); }
-
-        button {
-            width: 100%; padding: 15px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white; border: none; border-radius: 12px;
-            font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s;
-        }
-
-        button:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0, 210, 255, 0.4); }
+        input { width: 100%; padding: 15px; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: white; font-size: 16px; margin-bottom: 15px; text-align: center; }
+        button { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; border: none; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
         button:disabled { opacity: 0.5; }
-
-        #result-area {
-            margin-top: 25px; display: none;
-            padding: 20px; background: rgba(255, 255, 255, 0.05);
-            border-radius: 16px; border-left: 4px solid var(--primary);
-            animation: fadeIn 0.4s ease-out;
-        }
-
+        #result-area { margin-top: 25px; display: none; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border-left: 4px solid var(--primary); animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* 人偶圖片框架 */
-        .avatar-frame {
-            width: 100px; height: 100px; margin: 0 auto 15px;
-            background: #000; border-radius: 50%;
-            border: 2px solid var(--primary); overflow: hidden;
-            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
-        }
-
+        .avatar-frame { width: 100px; height: 100px; margin: 0 auto 15px; background: #000; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
         #avatar-img { width: 100%; height: 100%; object-fit: cover; }
-
-        .id-display {
-            font-size: 30px; font-family: 'Courier New', monospace;
-            font-weight: bold; color: white; margin: 10px 0; display: block;
-        }
-
+        .id-display { font-size: 30px; font-family: monospace; font-weight: bold; color: white; margin: 10px 0; display: block; }
         .status-msg { font-size: 13px; margin-top: 15px; color: #94a3b8; min-height: 20px; }
-
-        .copy-btn {
-            background: transparent; border: 1px solid var(--accent);
-            color: var(--accent); padding: 8px 15px; border-radius: 8px;
-            font-size: 14px; cursor: pointer; margin-top: 10px;
-        }
-
+        .copy-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 10px; }
         footer { margin-top: 30px; font-size: 0.7rem; color: #444; }
     </style>
 </head>
 <body>
-
 <div class="grid-bg"></div>
-
 <div class="card">
     <div class="version-badge">v1.62</div>
     <h2>Roblox ID 轉換器</h2>
-    <div class="sub-title">USER TO ID INTERFACE</div>
-    
-    <input type="text" id="username" placeholder="輸入玩家名稱 (例如 @roblox)" spellcheck="false">
+    <div class="sub-title">STATION INTERFACE</div>
+    <input type="text" id="username" placeholder="搜尋玩家名稱..." spellcheck="false">
     <button onclick="lookup()" id="search-btn">讀取玩家數據</button>
-    
     <div id="result-area">
-        <div class="avatar-frame">
-            <img id="avatar-img" src="" alt="">
-        </div>
+        <div class="avatar-frame"><img id="avatar-img" src="" alt=""></div>
         <div id="user-display" style="font-size: 14px; color: #94a3b8; margin-bottom: 5px;"></div>
         <span id="id-value" class="id-display">----</span>
         <button class="copy-btn" onclick="copyId()" id="copy-btn">複製 ID 序列</button>
     </div>
-    
-    <div id="status" class="status-msg">系統待機中...</div>
-
-    <footer>
-        CORE ENGINE BY <span style="color: #666;">元界創想 IS GEMINI</span>
-    </footer>
+    <div id="status" class="status-msg">系統就緒</div>
+    <footer>CORE ENGINE BY 元界創想 IS GEMINI</footer>
 </div>
 
 <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzPGbZSEhQEyy0yNEuELG9LUjNhG-e4eZzyYodYNEnDQvc4pqkuqXHJhRK9GeJLrLNavA/exec";
+    // ⚠️ 這是你測試成功的網址
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvfhmjSroMeuHxcZpvZ9RG-DYVgQKZBZ6j0WWA1Gqgmq3Jt7VPuSqTrzm_BoWjmVmHsw/exec";
 
     async function lookup() {
         const input = document.getElementById('username');
@@ -147,15 +56,13 @@
         const resultArea = document.getElementById('result-area');
 
         if (!username) return;
-
         btn.disabled = true;
-        btn.innerText = "數據請求中...";
+        btn.innerText = "連線中...";
         status.innerText = "🛰️ 正在發送數據攔截請求...";
-        status.style.color = "#94a3b8";
         resultArea.style.display = 'none';
 
         try {
-            // 1. 取得 ID
+            // 使用最原始、最簡單的連線方式 (跟 v1.52 一模一樣)
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({ username: username })
@@ -167,28 +74,24 @@
                 const user = data.data[0];
                 const userId = user.id;
 
-                // 2. 取得頭像 (使用官方 Thumbnail API)
-                const thumbUrl = `https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=150x150&format=Png&isCircular=true`;
-                const thumbRes = await fetch(thumbUrl);
-                const thumbData = await thumbRes.json();
-                
-                if (thumbData.data && thumbData.data.length > 0) {
-                    document.getElementById('avatar-img').src = thumbData.data[0].imageUrl;
-                }
+                // 異步抓取圖片，即使失敗也不影響 ID 顯示
+                fetch(`https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=150x150&format=Png&isCircular=true`)
+                .then(r => r.json())
+                .then(tData => {
+                    if(tData.data && tData.data[0]) document.getElementById('avatar-img').src = tData.data[0].imageUrl;
+                });
 
-                // 3. 顯示結果
                 document.getElementById('id-value').innerText = userId;
                 document.getElementById('user-display').innerText = `找到數據：${user.displayName} (@${user.name})`;
                 resultArea.style.display = 'block';
-                status.innerText = "✅ 轉換作業成功完成";
+                status.innerText = "✅ 數據同步完成";
                 status.style.color = "#4ade80";
             } else {
                 status.innerText = "❌ 警告：目標玩家不存在";
-                status.style.color = "#fb7185";
             }
         } catch (err) {
-            status.innerText = "⚠️ 錯誤：連線超時或後端未回應";
-            status.style.color = "#fb7185";
+            status.innerText = "⚠️ 錯誤：連線被拒絕。請稍候再試。";
+            console.error(err);
         } finally {
             btn.disabled = false;
             btn.innerText = "讀取玩家數據";
@@ -199,12 +102,11 @@
         const idText = document.getElementById('id-value').innerText;
         const btn = document.getElementById('copy-btn');
         navigator.clipboard.writeText(idText).then(() => {
-            const originalText = btn.innerText;
+            const old = btn.innerText;
             btn.innerText = "已複製！";
-            setTimeout(() => btn.innerText = originalText, 2000);
+            setTimeout(() => btn.innerText = old, 2000);
         });
     }
 </script>
-
 </body>
 </html>
