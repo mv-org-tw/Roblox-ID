@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox (User) to (ID) 轉換器 v1.62</title>
+    <title>Roblox (User) to (ID) 轉換器 v1.63</title>
     <style>
         :root { --primary: #00d2ff; --secondary: #3a7bd5; --bg: #0b0f1a; --card-bg: rgba(20, 28, 45, 0.9); --accent: #4ade80; }
         * { box-sizing: border-box; }
@@ -18,8 +18,11 @@
         button:disabled { opacity: 0.5; }
         #result-area { margin-top: 25px; display: none; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 16px; border-left: 4px solid var(--primary); animation: fadeIn 0.4s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .avatar-frame { width: 100px; height: 100px; margin: 0 auto 15px; background: #000; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); }
-        #avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* 人偶圖片強化樣式 */
+        .avatar-frame { width: 110px; height: 110px; margin: 0 auto 15px; background: #000; border-radius: 50%; border: 2px solid var(--primary); overflow: hidden; box-shadow: 0 0 15px rgba(0, 210, 255, 0.3); display: flex; justify-content: center; align-items: center; }
+        #avatar-img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 0.5s; }
+        
         .id-display { font-size: 30px; font-family: monospace; font-weight: bold; color: white; margin: 10px 0; display: block; }
         .status-msg { font-size: 13px; margin-top: 15px; color: #94a3b8; min-height: 20px; }
         .copy-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; margin-top: 10px; }
@@ -29,13 +32,15 @@
 <body>
 <div class="grid-bg"></div>
 <div class="card">
-    <div class="version-badge">v1.62</div>
+    <div class="version-badge">v1.63</div>
     <h2>Roblox ID 轉換器</h2>
     <div class="sub-title">STATION INTERFACE</div>
     <input type="text" id="username" placeholder="搜尋玩家名稱..." spellcheck="false">
     <button onclick="lookup()" id="search-btn">讀取玩家數據</button>
     <div id="result-area">
-        <div class="avatar-frame"><img id="avatar-img" src="" alt=""></div>
+        <div class="avatar-frame">
+            <img id="avatar-img" src="" alt="Avatar">
+        </div>
         <div id="user-display" style="font-size: 14px; color: #94a3b8; margin-bottom: 5px;"></div>
         <span id="id-value" class="id-display">----</span>
         <button class="copy-btn" onclick="copyId()" id="copy-btn">複製 ID 序列</button>
@@ -45,7 +50,6 @@
 </div>
 
 <script>
-    // ⚠️ 這是你測試成功的網址
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxvfhmjSroMeuHxcZpvZ9RG-DYVgQKZBZ6j0WWA1Gqgmq3Jt7VPuSqTrzm_BoWjmVmHsw/exec";
 
     async function lookup() {
@@ -54,15 +58,16 @@
         const btn = document.getElementById('search-btn');
         const status = document.getElementById('status');
         const resultArea = document.getElementById('result-area');
+        const avatarImg = document.getElementById('avatar-img');
 
         if (!username) return;
         btn.disabled = true;
         btn.innerText = "連線中...";
         status.innerText = "🛰️ 正在發送數據攔截請求...";
         resultArea.style.display = 'none';
+        avatarImg.style.opacity = "0"; // 重置圖片透明度
 
         try {
-            // 使用最原始、最簡單的連線方式 (跟 v1.52 一模一樣)
             const response = await fetch(SCRIPT_URL, {
                 method: 'POST',
                 body: JSON.stringify({ username: username })
@@ -74,23 +79,36 @@
                 const user = data.data[0];
                 const userId = user.id;
 
-                // 異步抓取圖片，即使失敗也不影響 ID 顯示
-                fetch(`https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=150x150&format=Png&isCircular=true`)
-                .then(r => r.json())
-                .then(tData => {
-                    if(tData.data && tData.data[0]) document.getElementById('avatar-img').src = tData.data[0].imageUrl;
-                });
-
+                // 顯示基礎數據
                 document.getElementById('id-value').innerText = userId;
                 document.getElementById('user-display').innerText = `找到數據：${user.displayName} (@${user.name})`;
                 resultArea.style.display = 'block';
                 status.innerText = "✅ 數據同步完成";
                 status.style.color = "#4ade80";
+
+                // 🚀 圖片抓取修復：改用更穩定的 Thumbnail API 路徑
+                const thumbUrl = `https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=150x150&format=Png&isCircular=false`;
+                
+                // 先預設載入一張圖片，載入完畢再顯示
+                avatarImg.src = thumbUrl; // 這會觸發瀏覽器去拿資料
+                
+                // 透過 JSON 驗證圖片是否真的可用
+                fetch(thumbUrl).then(r => r.json()).then(tData => {
+                    if(tData.data && tData.data[0]) {
+                        avatarImg.src = tData.data[0].imageUrl;
+                        avatarImg.style.opacity = "1"; // 漸顯動畫
+                    }
+                }).catch(() => {
+                    // 如果圖片失敗，顯示一個預設圖或提示
+                    avatarImg.src = "https://tr.rbxcdn.com/38c6edcf6a9e88ba9a76472f8836528d/150/150/AvatarHeadshot/Png";
+                    avatarImg.style.opacity = "1";
+                });
+
             } else {
                 status.innerText = "❌ 警告：目標玩家不存在";
             }
         } catch (err) {
-            status.innerText = "⚠️ 錯誤：連線被拒絕。請稍候再試。";
+            status.innerText = "⚠️ 錯誤：連線超時。";
             console.error(err);
         } finally {
             btn.disabled = false;
