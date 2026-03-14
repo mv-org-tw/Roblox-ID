@@ -1,106 +1,65 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox (User) to (ID) 轉換器</title>
-    <style>
-        :root {
-            --primary: #00d2ff;
-            --secondary: #3a7bd5;
-            --bg: #0b0f1a;
-            --card-bg: rgba(20, 28, 45, 0.9);
-            --accent: #4ade80;
-            --text-dim: #94a3b8;
+async function lookup() {
+    const input = document.getElementById('username');
+    const username = input.value.trim().replace('@', '');
+    const status = document.getElementById('status');
+    const resArea = document.getElementById('result-area');
+    const btn = document.getElementById('search-btn');
+
+    if (!username) return;
+
+    btn.disabled = true;
+    btn.innerText = "正在讀取記憶體...";
+    status.innerText = "🛰️ 正在發送數據攔截請求...";
+    status.style.color = "#94a3b8"; // 重設顏色
+    resArea.style.display = 'none';
+
+    try {
+        // 優化點：使用 text/plain 標頭來繞過嚴格的 CORS 預檢
+        const response = await fetch(SCRIPT_URL, {
+            method: 'POST',
+            mode: 'no-cors', // 這裡如果改 no-cors 會拿不到回傳值，所以我們用 text/plain
+            headers: {
+                'Content-Type': 'text/plain;charset=utf-8'
+            },
+            body: JSON.stringify({ username: username })
+        });
+
+        // 因為 GAS 轉向機制，有時 fetch 會因為 CORS 拿不到 JSON
+        // 我們改用最穩定的處理方式
+        const data = await response.json();
+
+        if (data && data.data && data.data.length > 0) {
+            const user = data.data[0];
+            const userId = user.id;
+
+            // 取得頭像
+            const thumbUrl = `https://thumbnails.roblox.com/v1/users/avatar-bust?userIds=${userId}&size=150x150&format=Png&isCircular=true`;
+            const thumbRes = await fetch(thumbUrl);
+            const thumbData = await thumbRes.json();
+            
+            if (thumbData.data && thumbData.data.length > 0) {
+                document.getElementById('avatar-img').src = thumbData.data[0].imageUrl;
+            }
+
+            document.getElementById('id-value').innerText = userId;
+            document.getElementById('user-display').innerText = `${user.displayName} (@${user.name})`;
+            resArea.style.display = 'block';
+            status.innerText = "✅ 轉換作業成功完成";
+            status.style.color = "#4ade80";
+        } else {
+            status.innerText = "❌ 警告：目標玩家不存在於資料庫中";
+            status.style.color = "#fb7185";
         }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', 'PingFang TC', sans-serif;
-            background: radial-gradient(circle at center, #16213e 0%, #0b0f1a 100%);
-            color: white;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .grid-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px), 
-                              linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
-            z-index: -1;
-        }
-
-        .card {
-            background: var(--card-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 2.5rem 2rem;
-            border-radius: 24px;
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
-            width: 90%;
-            max-width: 440px;
-            text-align: center;
-            position: relative;
-        }
-
-        .version-tag {
-            position: absolute;
-            top: 18px;
-            left: 20px;
-            font-size: 10px;
-            color: var(--primary);
-            letter-spacing: 1px;
-            font-weight: bold;
-            opacity: 0.8;
-        }
-
-        h2 {
-            margin: 10px 0 5px 0;
-            font-size: 1.4rem;
-            letter-spacing: 1px;
-            color: #fff;
-        }
-
-        .sub-title {
-            font-size: 0.85rem;
-            color: var(--primary);
-            margin-bottom: 25px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .input-box {
-            width: 100%;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 14px;
-            color: white;
-            font-size: 16px;
-            margin-bottom: 15px;
-            text-align: center;
-            transition: 0.3s;
-        }
-
-        .input-box:focus {
-            border-color: var(--primary);
-            background: rgba(0, 0, 0, 0.6);
-            outline: none;
-            box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
-        }
-
-        button {
-            width: 100%;
-            padding: 16px;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            color: white;
+    } catch (err) {
+        console.error(err);
+        // 如果還是失敗，提供更具體的診斷
+        status.innerText = "⚠️ 錯誤：連線被拒絕。請稍候 5 秒再試，或檢查網路。";
+        status.style.color = "#fb7185";
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "執行轉換程序";
+    }
+}
             border: none;
             border-radius: 14px;
             font-weight: 700;
